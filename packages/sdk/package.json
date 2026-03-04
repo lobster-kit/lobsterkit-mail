@@ -1,0 +1,58 @@
+{
+  "name": "@lobsterkit/lobstermail",
+  "version": "0.0.3",
+  "description": "Email infrastructure for autonomous AI agents. Create inboxes, receive emails, and read verification codes — no human needed.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "email",
+    "ai",
+    "agent",
+    "inbox",
+    "verification",
+    "lobstermail",
+    "autonomous",
+    "sdk"
+  ],
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "peerDependencies": {
+    "ws": "^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ws": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "prepublishOnly": "pnpm build",
+    "docs": "typedoc",
+    "docs:json": "typedoc --json docs-dist/api.json"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.1",
+    "tsup": "^8.3.6",
+    "typedoc": "^0.28.17",
+    "typedoc-plugin-markdown": "^4.10.0",
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.18"
+  }
+}
