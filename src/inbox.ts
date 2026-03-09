@@ -66,7 +66,7 @@ export interface SendOptions {
  * @example
  * ```typescript
  * const inbox = await lm.createInbox();
- * const emails = await inbox.receive();
+ * const { data: emails } = await inbox.receive();
  * const email = await inbox.waitForEmail({ filter: { from: 'noreply@service.com' } });
  * ```
  */

@@ -70,9 +70,9 @@ describe.skipIf(!canRun)('SDK Integration', () => {
     expect(fetched.isActive).toBe(false);
   });
 
-  it('inbox.receive returns empty array for new inbox', async () => {
+  it('inbox.receive returns empty data for new inbox', async () => {
     const inbox = await lm.createInbox();
-    const emails = await inbox.receive();
+    const { data: emails } = await inbox.receive();
     expect(emails).toHaveLength(0);
   });
 

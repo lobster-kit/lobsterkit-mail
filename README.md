@@ -49,7 +49,7 @@ Dots are cosmetic (Gmail-style): `sarah.shield` and `sarahshield` deliver to the
 ## Receiving Email
 
 ```typescript
-const emails = await inbox.receive();
+const { data: emails } = await inbox.receive();
 const email = await inbox.waitForEmail({ filter: { from: 'noreply@service.com' } });
 const full = await inbox.getEmail(emailId);
 ```

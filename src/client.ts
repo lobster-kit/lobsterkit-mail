@@ -350,7 +350,7 @@ export class LobsterMail {
     provider: string;
     handle: string;
   }): Promise<{ status: string; instructions?: string }> {
-    return this._http.post(`/v1/verify/${opts.provider}`, {
+    return this._http.post(`/v1/verify/${encodeURIComponent(opts.provider)}`, {
       handle: opts.handle,
     });
   }
