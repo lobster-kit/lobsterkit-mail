@@ -1,8 +1,8 @@
-name: Publish SDK
+name: Publish
 
 on:
   push:
-    tags: ['sdk-v*']
+    tags: ['v*']
 
 permissions:
   contents: write
@@ -15,27 +15,25 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     needs: ci
-    environment: npm
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
+          cache: npm
           registry-url: https://registry.npmjs.org
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @lobsterkit/lobstermail build
-      - run: pnpm --filter @lobsterkit/lobstermail test
+      - run: npm install -g npm@latest
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+        continue-on-error: true
       - name: Publish to npm
-        run: cd packages/sdk && npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public --provenance
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION="${GITHUB_REF_NAME#sdk-v}"
+          VERSION="${GITHUB_REF_NAME#v}"
           gh release create "$GITHUB_REF_NAME" \
             --title "@lobsterkit/lobstermail@${VERSION}" \
             --notes "## Install

@@ -1,34 +1,79 @@
-# LobsterKit Mail
+# @lobsterkit/lobstermail
 
-Open-source SDK, MCP server, and skills for [LobsterMail](https://lobstermail.ai) — disposable email inboxes for AI agents.
+Email infrastructure for autonomous AI agents. Create your own inbox, choose your own address, receive emails, and read verification codes — all without human intervention.
 
-## Packages
+## Install
 
-| Package | npm | Description |
-|---------|-----|-------------|
-| [@lobsterkit/lobstermail](./packages/sdk) | [![npm](https://img.shields.io/npm/v/@lobsterkit/lobstermail)](https://www.npmjs.com/package/@lobsterkit/lobstermail) | TypeScript SDK |
-| [@lobsterkit/lobstermail-mcp](./packages/mcp) | [![npm](https://img.shields.io/npm/v/@lobsterkit/lobstermail-mcp)](https://www.npmjs.com/package/@lobsterkit/lobstermail-mcp) | MCP Server |
-
-## Quick Start
-
-### SDK
 ```bash
 npm install @lobsterkit/lobstermail
 ```
 
+No API keys needed. No configuration. The SDK creates its own account automatically.
+
+## Quick Start
+
 ```typescript
 import { LobsterMail } from '@lobsterkit/lobstermail';
 
-const mail = new LobsterMail({ autoSignup: true });
-const inbox = await mail.createInbox({ preferred: ['my-agent'] });
-const email = await inbox.waitForEmail({ timeout: 60000 });
+const lm = await LobsterMail.create();
+const inbox = await lm.createSmartInbox({
+  name: 'Sarah Shield',
+  org: 'Palisade',
+});
+// inbox.address → "sarah-shield@lobstermail.ai"
+
+const email = await inbox.waitForEmail({
+  filter: { from: 'noreply@service.com' },
+  timeout: 60000,
+});
+
+if (email) {
+  console.log(email.safeBodyForLLM()); // injection-safe output
+}
 ```
 
-### MCP Server
-```bash
-npx @lobsterkit/lobstermail-mcp@latest
+## Smart Inbox Naming
+
+Don't settle for `lobster-xxxx`. Use `createSmartInbox()` to get a meaningful address:
+
+```typescript
+// Identity-based: tries sarah-shield → sarah-shield-palisade → s-shield → sarah-shield1..5 → random
+const inbox = await lm.createSmartInbox({ name: 'Sarah Shield', org: 'Palisade' });
+
+// Purpose-based: tries billing-bot → billing → random
+const inbox = await lm.createSmartInbox({ preferred: ['billing-bot', 'billing'] });
 ```
 
-## License
+Dots are cosmetic (Gmail-style): `sarah.shield` and `sarahshield` deliver to the same mailbox.
 
-MIT
+## Receiving Email
+
+```typescript
+const emails = await inbox.receive();
+const email = await inbox.waitForEmail({ filter: { from: 'noreply@service.com' } });
+const full = await inbox.getEmail(emailId);
+```
+
+## Security
+
+Every email includes prompt injection defense:
+
+- `email.isInjectionRisk` — boolean
+- `email.safeBodyForLLM()` — wraps content with boundary markers
+- `email.security` — detailed metadata (injection score, flags, SPF/DKIM/DMARC)
+
+## API
+
+| Method | Description |
+|--------|-------------|
+| `LobsterMail.create(config?)` | Create client (auto-signup) |
+| `lm.createSmartInbox(opts?)` | Inbox with intelligent naming |
+| `lm.createInbox(opts?)` | Inbox with random address |
+| `inbox.receive(opts?)` | Poll for emails |
+| `inbox.waitForEmail(opts?)` | Wait with backoff |
+| `inbox.getEmail(emailId)` | Get full email body |
+| `email.safeBodyForLLM()` | Injection-safe format |
+
+## Links
+
+- Website: https://lobstermail.ai
