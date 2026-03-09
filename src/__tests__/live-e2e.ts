@@ -124,7 +124,7 @@ async function main() {
 
   // ─── Step 8: List all emails in inbox ───────────────────────
   console.log('\nStep 8: inbox.receive() — list...');
-  const all = await inbox.receive();
+  const { data: all } = await inbox.receive();
   console.log(`  ✅ Total emails in inbox: ${all.length}`);
 
   // ─── Done ───────────────────────────────────────────────────
