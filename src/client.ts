@@ -2,6 +2,8 @@ import { HttpClient } from './http.js';
 import { resolveToken, saveToken } from './storage.js';
 import { Inbox } from './inbox.js';
 import type { InboxData } from './inbox.js';
+import { Domain } from './domain.js';
+import type { DomainData } from './domain.js';
 import { AddressCollisionError } from './errors.js';
 import { generateVariations, sanitizeLocalPart, isValidLocalPart } from './naming.js';
 import { RealtimeConnection } from './realtime.js';
@@ -144,15 +146,16 @@ export class LobsterMail {
   /**
    * Create a new inbox.
    * By default generates a unique `lobster-xxxx@lobstermail.ai` address.
-   * Optionally provide a custom `localPart` to choose your own handle.
+   * Optionally provide a custom `localPart` and/or `domain` (requires a verified custom domain).
    *
    * @example
    * ```typescript
    * const inbox = await lm.createInbox(); // lobster-7f3k@lobstermail.ai
    * const custom = await lm.createInbox({ localPart: 'billing-bot' }); // billing-bot@lobstermail.ai
+   * const onDomain = await lm.createInbox({ localPart: 'agent', domain: 'yourdomain.com' }); // agent@yourdomain.com
    * ```
    */
-  async createInbox(opts?: { displayName?: string; localPart?: string }): Promise<Inbox> {
+  async createInbox(opts?: { displayName?: string; localPart?: string; domain?: string }): Promise<Inbox> {
     const data = await this._http.post<InboxData>('/v1/inboxes', opts ?? {});
     return new Inbox(data, this._http);
   }
@@ -325,6 +328,102 @@ export class LobsterMail {
   async deleteWebhook(id: string): Promise<void> {
     await this._http.delete(`/v1/webhooks/${id}`);
   }
+
+  // ---------------------------------------------------------------------------
+  // Account verification
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Start account verification to unlock sending (Tier 1+).
+   *
+   * @param opts - Verification options
+   * @param opts.provider - Verification provider (currently `'x'` for X/Twitter)
+   * @param opts.handle - Your handle on the provider (e.g. your X username)
+   * @returns Status and optional instructions to complete verification
+   *
+   * @example
+   * ```typescript
+   * const result = await lm.verify({ provider: 'x', handle: 'your_x_handle' });
+   * ```
+   */
+  async verify(opts: {
+    provider: string;
+    handle: string;
+  }): Promise<{ status: string; instructions?: string }> {
+    return this._http.post(`/v1/verify/${opts.provider}`, {
+      handle: opts.handle,
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Custom domains
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Register a custom domain for agent email addresses.
+   * Requires **Tier 2 (Builder)** or above.
+   *
+   * The returned {@link Domain} includes `dnsRecords` — an array of DNS records
+   * (verification TXT, MX, SPF, DKIM, DMARC) to configure at your DNS provider.
+   *
+   * @param opts - Domain options
+   * @param opts.domain - The domain name to register (e.g. `yourdomain.com`)
+   * @returns Domain instance with DNS records to configure
+   *
+   * @example
+   * ```typescript
+   * const domain = await lm.addDomain({ domain: 'yourdomain.com' });
+   * console.log(domain.dnsRecords); // 5 DNS records to configure
+   * ```
+   */
+  async addDomain(opts: { domain: string }): Promise<Domain> {
+    const data = await this._http.post<DomainData>('/v1/domains', opts);
+    return new Domain(data, this._http);
+  }
+
+  /**
+   * Get a custom domain by ID.
+   *
+   * @param id - The domain ID (e.g. `dom_...`)
+   * @throws {@link NotFoundError} if the domain does not exist
+   */
+  async getDomain(id: string): Promise<Domain> {
+    const data = await this._http.get<DomainData>(`/v1/domains/${id}`);
+    return new Domain(data, this._http);
+  }
+
+  /**
+   * List all custom domains for this account.
+   */
+  async listDomains(): Promise<Domain[]> {
+    const res = await this._http.get<{ data: DomainData[] }>('/v1/domains');
+    return res.data.map((d) => new Domain(d, this._http));
+  }
+
+  /**
+   * Trigger re-verification of a custom domain's DNS records.
+   *
+   * @param id - The domain ID (e.g. `dom_...`)
+   * @returns Updated domain with current verification status
+   */
+  async verifyDomain(id: string): Promise<Domain> {
+    const data = await this._http.post<DomainData>(`/v1/domains/${id}/verify`);
+    return new Domain(data, this._http);
+  }
+
+  /**
+   * Delete a custom domain.
+   *
+   * @param id - The domain ID to delete
+   * @throws {@link NotFoundError} if the domain does not exist
+   */
+  async deleteDomain(id: string): Promise<void> {
+    await this._http.delete(`/v1/domains/${id}`);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Real-time
+  // ---------------------------------------------------------------------------
 
   /**
    * Open a WebSocket connection for real-time email notifications.

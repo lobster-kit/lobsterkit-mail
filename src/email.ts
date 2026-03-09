@@ -27,6 +27,7 @@ export interface EmailData {
   subject: string;
   preview: string | null;
   body: string | null;
+  isRead: boolean;
   hasAttachments: boolean;
   attachments?: AttachmentData[];
   security: EmailSecurity;
@@ -60,6 +61,8 @@ export class Email {
   readonly cc: string[] | null;
   readonly subject: string;
   readonly preview: string | null;
+  /** Whether this email has been read. */
+  readonly isRead: boolean;
   readonly hasAttachments: boolean;
   /** Attachment metadata. Each entry has filename, contentType, sizeBytes, and s3Key. */
   readonly attachments: AttachmentData[];
@@ -81,6 +84,7 @@ export class Email {
     this.subject = data.subject;
     this.preview = data.preview;
     this._body = data.body;
+    this.isRead = data.isRead;
     this.hasAttachments = data.hasAttachments;
     this.attachments = data.attachments ?? [];
     this.security = data.security;

@@ -17,6 +17,14 @@ export interface ReceiveOptions {
   limit?: number;
   since?: string;
   direction?: 'inbound' | 'outbound';
+  /** Pagination cursor from a previous `receive()` response. */
+  cursor?: string;
+}
+
+export interface ReceiveResult {
+  data: Email[];
+  /** Cursor for fetching the next page. Absent when there are no more results. */
+  cursor?: string;
 }
 
 export interface WaitForEmailOptions {
@@ -37,10 +45,12 @@ export interface WaitForEmailOptions {
 }
 
 export interface SendOptions {
-  to: string[];
+  to: string | string[];
   cc?: string[];
   subject: string;
   body: { text: string; html?: string };
+  /** Reply-to address. Useful when the inbox is temporary but responses should route elsewhere. */
+  replyTo?: string;
   /** Attachments to include. Each `content` must be base64-encoded. Max 10 attachments. */
   attachments?: Array<{
     filename: string;
@@ -96,27 +106,35 @@ export class Inbox {
    * Poll for emails in this inbox.
    *
    * @param opts - Filtering and pagination options
-   * @param opts.limit - Max number of emails to return (default: 20)
+   * @param opts.limit - Max number of emails to return (default: 20, max: 100)
    * @param opts.since - Only return emails after this ISO 8601 timestamp
    * @param opts.direction - Filter by `'inbound'` or `'outbound'`
-   * @returns Array of email instances (newest first)
+   * @param opts.cursor - Pagination cursor from a previous response
+   * @returns Object with `data` (array of emails) and optional `cursor` for the next page
    *
    * @example
    * ```typescript
-   * const recent = await inbox.receive({ since: '2026-02-17T00:00:00Z', limit: 10 });
+   * const page1 = await inbox.receive({ limit: 10 });
+   * if (page1.cursor) {
+   *   const page2 = await inbox.receive({ limit: 10, cursor: page1.cursor });
+   * }
    * ```
    */
-  async receive(opts?: ReceiveOptions): Promise<Email[]> {
+  async receive(opts?: ReceiveOptions): Promise<ReceiveResult> {
     const params = new URLSearchParams();
     if (opts?.limit) params.set('limit', opts.limit.toString());
     if (opts?.since) params.set('since', opts.since);
     if (opts?.direction) params.set('direction', opts.direction);
+    if (opts?.cursor) params.set('cursor', opts.cursor);
 
     const qs = params.toString();
     const path = `/v1/inboxes/${this.id}/emails${qs ? `?${qs}` : ''}`;
 
-    const res = await this._http.get<{ data: EmailData[] }>(path);
-    return res.data.map((d) => new Email(d, this._http));
+    const res = await this._http.get<{ data: EmailData[]; cursor?: string }>(path);
+    return {
+      data: res.data.map((d) => new Email(d, this._http)),
+      cursor: res.cursor,
+    };
   }
 
   /**
@@ -269,7 +287,7 @@ export class Inbox {
     let attempt = 0;
 
     while (Date.now() - startTime < timeout) {
-      const emails = await this.receive({ since });
+      const { data: emails } = await this.receive({ since });
 
       for (const email of emails) {
         if (matchesFilter(email, opts?.filter)) {
@@ -309,10 +327,11 @@ export class Inbox {
   async send(opts: SendOptions): Promise<{ id: string; status: string }> {
     return this._http.post('/v1/emails/send', {
       from: this.address,
-      to: opts.to,
+      to: Array.isArray(opts.to) ? opts.to : [opts.to],
       cc: opts.cc,
       subject: opts.subject,
       body: opts.body,
+      replyTo: opts.replyTo,
       attachments: opts.attachments,
     });
   }

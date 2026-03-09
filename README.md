@@ -62,17 +62,58 @@ Every email includes prompt injection defense:
 - `email.safeBodyForLLM()` — wraps content with boundary markers
 - `email.security` — detailed metadata (injection score, flags, SPF/DKIM/DMARC)
 
+## Custom Domains
+
+Use your own domain instead of `@lobstermail.ai`. Requires **Tier 2 (Builder)** or above.
+
+```typescript
+const domain = await lm.addDomain({ domain: 'yourdomain.com' });
+console.log(domain.status);     // 'pending_verification'
+console.log(domain.dnsRecords); // DNS records to configure
+```
+
+Configure all five DNS records at your DNS provider:
+
+| # | Purpose | Type | Host | Value |
+|---|---------|------|------|-------|
+| 1 | Verification | TXT | `_lobstermail.yourdomain.com` | `lobstermail-verify=dom_abc123` |
+| 2 | Inbound mail | MX | `yourdomain.com` | `mx.lobstermail.ai` (priority 10) |
+| 3 | SPF | TXT | `yourdomain.com` | `v=spf1 include:spf.lobstermail.ai ~all` |
+| 4 | DKIM | CNAME | `lobstermail._domainkey.yourdomain.com` | `dkim.lobstermail.ai` |
+| 5 | DMARC | TXT | `_dmarc.yourdomain.com` | `v=DMARC1; p=quarantine; rua=mailto:dmarc@yourdomain.com` |
+
+If you already have an SPF record, add `include:spf.lobstermail.ai` to it rather than creating a new one.
+
+After DNS propagation, verify and start using your domain:
+
+```typescript
+await lm.verifyDomain(domain.id);
+
+const inbox = await lm.createInbox({
+  localPart: 'agent',
+  domain: 'yourdomain.com',
+});
+// inbox.address → "agent@yourdomain.com"
+```
+
 ## API
 
 | Method | Description |
 |--------|-------------|
 | `LobsterMail.create(config?)` | Create client (auto-signup) |
+| `lm.verify(opts)` | Verify account to unlock sending |
 | `lm.createSmartInbox(opts?)` | Inbox with intelligent naming |
-| `lm.createInbox(opts?)` | Inbox with random address |
-| `inbox.receive(opts?)` | Poll for emails |
+| `lm.createInbox(opts?)` | Inbox with random or custom address |
+| `inbox.receive(opts?)` | Poll for emails (paginated) |
 | `inbox.waitForEmail(opts?)` | Wait with backoff |
 | `inbox.getEmail(emailId)` | Get full email body |
+| `inbox.send(opts)` | Send email (Tier 1+) |
 | `email.safeBodyForLLM()` | Injection-safe format |
+| `lm.addDomain(opts)` | Register a custom domain |
+| `lm.getDomain(id)` | Get domain details |
+| `lm.listDomains()` | List all custom domains |
+| `lm.verifyDomain(id)` | Trigger DNS re-verification |
+| `lm.deleteDomain(id)` | Delete a custom domain |
 
 ## Links
 

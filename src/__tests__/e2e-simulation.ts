@@ -87,7 +87,7 @@ async function main() {
 
   // ─── Step 8: Receive emails ───
   console.log('\nStep 8: inbox.receive()...');
-  const emails = await inbox.receive();
+  const { data: emails } = await inbox.receive();
   console.log(`  ✅ Received ${emails.length} email(s)`);
   if (emails.length === 0) {
     console.error('  ❌ Expected at least 1 email');
@@ -153,7 +153,7 @@ async function main() {
   console.log('  ✅ Dot equivalence works — email delivered to same inbox');
 
   // Verify both emails are in the same inbox
-  const allEmails = await inbox.receive();
+  const { data: allEmails } = await inbox.receive();
   console.log(`  ✅ Inbox now has ${allEmails.length} email(s) (expected 2)`);
   if (allEmails.length !== 2) {
     console.error(`  ❌ Expected 2 emails, got ${allEmails.length}`);

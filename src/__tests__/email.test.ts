@@ -14,6 +14,7 @@ function makeEmailData(overrides?: Partial<EmailData>): EmailData {
     subject: 'Your verification code',
     preview: 'Your code is 847291.',
     body: 'Your code is 847291. Enter it on the signup page.',
+    isRead: false,
     hasAttachments: false,
     security: {
       injectionRiskScore: 0,
@@ -44,6 +45,7 @@ describe('Email', () => {
     expect(email.subject).toBe('Your verification code');
     expect(email.preview).toBe('Your code is 847291.');
     expect(email.body).toBe('Your code is 847291. Enter it on the signup page.');
+    expect(email.isRead).toBe(false);
     expect(email.hasAttachments).toBe(false);
   });
 

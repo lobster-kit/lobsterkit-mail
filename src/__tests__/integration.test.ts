@@ -93,7 +93,7 @@ describe.skipIf(!canRun)('SDK Integration', () => {
     expect(res.status).toBe(201);
 
     // Receive emails
-    const emails = await inbox.receive();
+    const { data: emails } = await inbox.receive();
     expect(emails.length).toBe(1);
     expect(emails[0]).toBeInstanceOf(Email);
     expect(emails[0].from).toBe('test-sdk@example.com');
