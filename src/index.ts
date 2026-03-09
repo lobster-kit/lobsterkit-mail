@@ -54,4 +54,4 @@ export type {
   ConnectionHandler,
 } from './realtime.js';
 
-export const VERSION = '0.1.0';
+export const VERSION = '1.5.0';
