@@ -2,6 +2,8 @@ import { HttpClient } from './http.js';
 import { resolveToken, saveToken } from './storage.js';
 import { Inbox } from './inbox.js';
 import type { InboxData } from './inbox.js';
+import { Email } from './email.js';
+import type { EmailData } from './email.js';
 import { AddressCollisionError } from './errors.js';
 import { generateVariations, sanitizeLocalPart, isValidLocalPart } from './naming.js';
 import { RealtimeConnection } from './realtime.js';
@@ -18,6 +20,33 @@ export interface SmartInboxOptions {
   org?: string;
   /** Display name for the inbox. Passed to all creation attempts. */
   displayName?: string;
+}
+
+export interface SearchOptions {
+  /** Search query — matches against subject, sender, and body preview. */
+  q: string;
+  /** Scope search to a specific inbox. */
+  inboxId?: string;
+  /** Filter by email direction. */
+  direction?: 'inbound' | 'outbound';
+  /** Filter by sender address (partial match). */
+  from?: string;
+  /** Only emails after this date (ISO 8601). */
+  since?: string;
+  /** Only emails before this date (ISO 8601). */
+  until?: string;
+  /** Filter by attachment presence. */
+  hasAttachments?: boolean;
+  /** Max results per page (1-50, default 20). */
+  limit?: number;
+  /** Pagination cursor from previous response. */
+  cursor?: string;
+}
+
+export interface SearchResult {
+  data: Email[];
+  hasMore: boolean;
+  cursor: string | null;
 }
 
 export interface LobsterMailConfig {
@@ -348,6 +377,47 @@ export class LobsterMail {
    * });
    * ```
    */
+  /**
+   * Search emails across all inboxes (or scoped to one inbox).
+   *
+   * Uses PostgreSQL full-text search on subject, sender, and body preview.
+   * Results are ranked by relevance when a query is provided.
+   *
+   * @param opts - Search options including query, filters, and pagination
+   * @returns Search results with pagination cursor
+   *
+   * @example
+   * ```typescript
+   * const results = await lm.searchEmails({ q: 'invoice' });
+   * for (const email of results.data) {
+   *   console.log(email.subject, email.from);
+   * }
+   * ```
+   */
+  async searchEmails(opts: SearchOptions): Promise<SearchResult> {
+    const params = new URLSearchParams();
+    params.set('q', opts.q);
+    if (opts.inboxId) params.set('inboxId', opts.inboxId);
+    if (opts.direction) params.set('direction', opts.direction);
+    if (opts.from) params.set('from', opts.from);
+    if (opts.since) params.set('since', opts.since);
+    if (opts.until) params.set('until', opts.until);
+    if (opts.hasAttachments !== undefined) params.set('hasAttachments', String(opts.hasAttachments));
+    if (opts.limit) params.set('limit', String(opts.limit));
+    if (opts.cursor) params.set('cursor', opts.cursor);
+
+    const res = await this._http.get<{
+      data: EmailData[];
+      pagination: { hasMore: boolean; cursor: string | null };
+    }>(`/v1/emails/search?${params.toString()}`);
+
+    return {
+      data: res.data.map((d) => new Email(d, this._http)),
+      hasMore: res.pagination.hasMore,
+      cursor: res.pagination.cursor,
+    };
+  }
+
   async connect(options?: RealtimeOptions): Promise<RealtimeConnection> {
     if (this._realtime?.connected) return this._realtime;
 

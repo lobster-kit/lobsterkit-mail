@@ -20,7 +20,7 @@
  */
 
 export { LobsterMail } from './client.js';
-export type { LobsterMailConfig, AccountInfo, SmartInboxOptions } from './client.js';
+export type { LobsterMailConfig, AccountInfo, SmartInboxOptions, SearchOptions, SearchResult } from './client.js';
 
 export { Inbox } from './inbox.js';
 export type { InboxData, ReceiveOptions, WaitForEmailOptions, SendOptions } from './inbox.js';
