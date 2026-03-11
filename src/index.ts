@@ -29,7 +29,17 @@ export { Domain } from './domain.js';
 export type { DomainData, DomainStatus, DnsRecord, DnsRecordType } from './domain.js';
 
 export { Email } from './email.js';
-export type { EmailData, EmailSecurity, AttachmentData } from './email.js';
+export type {
+  EmailData,
+  EmailSecurity,
+  AttachmentData,
+  ExtractionResult,
+  ExtractedContact,
+  ExtractedDate,
+  ExtractedAmount,
+  ExtractedScheduling,
+  ExtractedAction,
+} from './email.js';
 
 export {
   LobsterMailError,

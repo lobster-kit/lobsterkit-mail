@@ -17,6 +17,61 @@ export interface AttachmentData {
   downloadUrl?: string;
 }
 
+export interface ExtractedContact {
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  role: string | null;
+  organization: string | null;
+}
+
+export interface ExtractedDate {
+  value: string;
+  label: string;
+  isEstimate: boolean;
+}
+
+export interface ExtractedAmount {
+  value: number;
+  currency: string;
+  label: string;
+}
+
+export interface ExtractedScheduling {
+  eventType: string;
+  startTime: string | null;
+  endTime: string | null;
+  location: string | null;
+  attendees: string[];
+  summary: string;
+}
+
+export interface ExtractedAction {
+  type: string;
+  description: string;
+  url: string | null;
+  deadline: string | null;
+}
+
+export interface ExtractionResult {
+  id: string;
+  emailId: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  contacts: ExtractedContact[];
+  dates: ExtractedDate[];
+  amounts: ExtractedAmount[];
+  scheduling: ExtractedScheduling[];
+  actions: ExtractedAction[];
+  metadata: Record<string, unknown>;
+  modelUsed: string | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  processingMs: number | null;
+  errorMessage: string | null;
+  createdAt: string;
+  completedAt: string | null;
+}
+
 export interface EmailData {
   id: string;
   inboxId: string;
@@ -196,5 +251,69 @@ export class Email {
       contentType: this.attachments[index].contentType,
       data: Buffer.from(arrayBuf),
     };
+  }
+
+  /**
+   * Trigger AI extraction of structured data from this email.
+   * Extracts contacts, dates, amounts, scheduling data, and action items.
+   * Idempotent — returns the existing extraction if already triggered.
+   *
+   * @returns Extraction result (may be pending/processing/completed/failed)
+   */
+  async extract(): Promise<ExtractionResult> {
+    return this._http.post<ExtractionResult>(
+      `/v1/inboxes/${this.inboxId}/emails/${this.id}/extract`,
+    );
+  }
+
+  /**
+   * Get the extraction result for this email, if one exists.
+   *
+   * @returns Extraction result or null if no extraction has been triggered
+   */
+  async getExtraction(): Promise<ExtractionResult | null> {
+    try {
+      return await this._http.get<ExtractionResult>(
+        `/v1/inboxes/${this.inboxId}/emails/${this.id}/extraction`,
+      );
+    } catch (err: any) {
+      if (err?.statusCode === 404 || err?.name === 'NotFoundError') {
+        return null;
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Trigger extraction and poll until complete or timeout.
+   *
+   * @param opts - Options
+   * @param opts.timeout - Max wait time in ms (default: 60000)
+   * @param opts.pollInterval - Polling interval in ms (default: 2000)
+   * @returns Completed or failed extraction result, or null if timed out
+   */
+  async waitForExtraction(opts?: {
+    timeout?: number;
+    pollInterval?: number;
+  }): Promise<ExtractionResult | null> {
+    const timeout = opts?.timeout ?? 60_000;
+    const pollInterval = opts?.pollInterval ?? 2_000;
+    const startTime = Date.now();
+
+    // Trigger extraction (idempotent) and use initial result
+    let result: ExtractionResult | null = await this.extract();
+    if (result.status === 'completed' || result.status === 'failed') {
+      return result;
+    }
+
+    while (Date.now() - startTime < timeout) {
+      await new Promise((resolve) => setTimeout(resolve, pollInterval));
+      result = await this.getExtraction();
+      if (result && (result.status === 'completed' || result.status === 'failed')) {
+        return result;
+      }
+    }
+
+    return null;
   }
 }

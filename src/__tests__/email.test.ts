@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { Email } from '../email.js';
-import type { EmailData } from '../email.js';
+import type { EmailData, ExtractionResult } from '../email.js';
 import { HttpClient } from '../http.js';
 
 function makeEmailData(overrides?: Partial<EmailData>): EmailData {
@@ -186,5 +186,144 @@ describe('Email', () => {
 
     const safe = email.safeBodyForLLM();
     expect(safe).toContain('Security Flags: injection:boundary_manipulation, injection:data_exfiltration');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Extraction methods
+// ---------------------------------------------------------------------------
+
+function makeExtractionResult(overrides?: Partial<ExtractionResult>): ExtractionResult {
+  return {
+    id: 'ext_abc123',
+    emailId: 'eml_test123',
+    status: 'completed',
+    contacts: [],
+    dates: [],
+    amounts: [],
+    scheduling: [],
+    actions: [],
+    metadata: {},
+    modelUsed: 'claude-sonnet-4-20250514',
+    inputTokens: 500,
+    outputTokens: 200,
+    processingMs: 3000,
+    errorMessage: null,
+    createdAt: '2026-03-11T20:00:00Z',
+    completedAt: '2026-03-11T20:00:03Z',
+    ...overrides,
+  };
+}
+
+function makeMockHttp() {
+  const http = new HttpClient({ baseUrl: 'http://localhost:0' });
+  http.post = vi.fn();
+  http.get = vi.fn();
+  return http as HttpClient & { post: ReturnType<typeof vi.fn>; get: ReturnType<typeof vi.fn> };
+}
+
+describe('Email extraction', () => {
+  it('extract() posts to the correct endpoint', async () => {
+    const http = makeMockHttp();
+    const result = makeExtractionResult();
+    http.post.mockResolvedValue(result);
+
+    const email = new Email(makeEmailData(), http);
+    const res = await email.extract();
+
+    expect(http.post).toHaveBeenCalledWith('/v1/inboxes/ibx_test456/emails/eml_test123/extract');
+    expect(res.id).toBe('ext_abc123');
+  });
+
+  it('getExtraction() gets from the correct endpoint', async () => {
+    const http = makeMockHttp();
+    const result = makeExtractionResult();
+    http.get.mockResolvedValue(result);
+
+    const email = new Email(makeEmailData(), http);
+    const res = await email.getExtraction();
+
+    expect(http.get).toHaveBeenCalledWith('/v1/inboxes/ibx_test456/emails/eml_test123/extraction');
+    expect(res?.status).toBe('completed');
+  });
+
+  it('getExtraction() returns null on 404', async () => {
+    const http = makeMockHttp();
+    const notFoundError = new Error('Not found');
+    (notFoundError as any).statusCode = 404;
+    http.get.mockRejectedValue(notFoundError);
+
+    const email = new Email(makeEmailData(), http);
+    const res = await email.getExtraction();
+
+    expect(res).toBeNull();
+  });
+
+  it('getExtraction() returns null for NotFoundError name', async () => {
+    const http = makeMockHttp();
+    const notFoundError = new Error('Not found');
+    (notFoundError as any).name = 'NotFoundError';
+    http.get.mockRejectedValue(notFoundError);
+
+    const email = new Email(makeEmailData(), http);
+    const res = await email.getExtraction();
+
+    expect(res).toBeNull();
+  });
+
+  it('getExtraction() rethrows other errors', async () => {
+    const http = makeMockHttp();
+    http.get.mockRejectedValue(new Error('Server error'));
+
+    const email = new Email(makeEmailData(), http);
+    await expect(email.getExtraction()).rejects.toThrow('Server error');
+  });
+
+  it('waitForExtraction() returns immediately when extract() returns completed', async () => {
+    const http = makeMockHttp();
+    http.post.mockResolvedValue(makeExtractionResult({ status: 'completed' }));
+
+    const email = new Email(makeEmailData(), http);
+    const res = await email.waitForExtraction({ timeout: 5000 });
+
+    expect(res?.status).toBe('completed');
+    expect(http.get).not.toHaveBeenCalled(); // No polling needed
+  });
+
+  it('waitForExtraction() returns immediately when extract() returns failed', async () => {
+    const http = makeMockHttp();
+    http.post.mockResolvedValue(makeExtractionResult({ status: 'failed', errorMessage: 'API error' }));
+
+    const email = new Email(makeEmailData(), http);
+    const res = await email.waitForExtraction({ timeout: 5000 });
+
+    expect(res?.status).toBe('failed');
+    expect(res?.errorMessage).toBe('API error');
+    expect(http.get).not.toHaveBeenCalled();
+  });
+
+  it('waitForExtraction() polls until completed', async () => {
+    const http = makeMockHttp();
+    http.post.mockResolvedValue(makeExtractionResult({ status: 'processing' }));
+    http.get
+      .mockResolvedValueOnce(makeExtractionResult({ status: 'processing' }))
+      .mockResolvedValueOnce(makeExtractionResult({ status: 'completed' }));
+
+    const email = new Email(makeEmailData(), http);
+    const res = await email.waitForExtraction({ timeout: 10000, pollInterval: 10 });
+
+    expect(res?.status).toBe('completed');
+    expect(http.get).toHaveBeenCalledTimes(2);
+  });
+
+  it('waitForExtraction() returns null on timeout', async () => {
+    const http = makeMockHttp();
+    http.post.mockResolvedValue(makeExtractionResult({ status: 'processing' }));
+    http.get.mockResolvedValue(makeExtractionResult({ status: 'processing' }));
+
+    const email = new Email(makeEmailData(), http);
+    const res = await email.waitForExtraction({ timeout: 50, pollInterval: 10 });
+
+    expect(res).toBeNull();
   });
 });
