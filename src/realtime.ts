@@ -1,6 +1,7 @@
 import { Email } from './email.js';
 import type { EmailData } from './email.js';
 import type { HttpClient } from './http.js';
+import type { WebhookEvent } from './events.js';
 
 export interface RealtimeOptions {
   /** Auto-reconnect on unexpected disconnect. Default: true */
@@ -11,7 +12,20 @@ export interface RealtimeOptions {
   reconnectDelay?: number;
 }
 
+/** A generic realtime event with typed event name and data payload. */
+export interface RealtimeEvent {
+  /** The event type (e.g. 'email.received', 'inbox.created'). */
+  eventType: string;
+  /** The inbox this event relates to. */
+  inboxId: string;
+  /** ISO 8601 timestamp. */
+  timestamp: string;
+  /** Event-specific data payload. */
+  data: Record<string, unknown>;
+}
+
 export type EmailEventHandler = (email: Email) => void;
+export type GenericEventHandler = (event: RealtimeEvent) => void;
 export type ErrorHandler = (error: Error) => void;
 export type ConnectionHandler = () => void;
 
@@ -44,6 +58,7 @@ export class RealtimeConnection {
 
   private _subscriptions: Map<string, Set<EmailEventHandler>> = new Map();
   private _globalHandlers: Set<EmailEventHandler> = new Set();
+  private _genericHandlers: Set<GenericEventHandler> = new Set();
   private _errorHandlers: Set<ErrorHandler> = new Set();
   private _connectHandlers: Set<ConnectionHandler> = new Set();
   private _disconnectHandlers: Set<ConnectionHandler> = new Set();
@@ -144,6 +159,28 @@ export class RealtimeConnection {
     };
   }
 
+  /**
+   * Listen to all event types from all subscribed inboxes.
+   *
+   * Fires for every event (email.received, email.sent, inbox.created, etc.),
+   * not just email events. Use this for generic event processing.
+   *
+   * @returns An unsubscribe function.
+   *
+   * @example
+   * ```typescript
+   * rt.onEvent((event) => {
+   *   console.log(`[${event.eventType}]`, event.data);
+   * });
+   * ```
+   */
+  onEvent(handler: GenericEventHandler): () => void {
+    this._genericHandlers.add(handler);
+    return () => {
+      this._genericHandlers.delete(handler);
+    };
+  }
+
   /** Listen for connection errors. */
   onError(handler: ErrorHandler): () => void {
     this._errorHandlers.add(handler);
@@ -210,10 +247,24 @@ export class RealtimeConnection {
         connectResolve?.();
         break;
 
-      case 'event':
-        if (msg.event_type === 'email.received' && msg.data) {
+      case 'event': {
+        const inboxId = msg.inbox_id;
+        const eventType = msg.event_type;
+
+        // Fire generic event handlers for ALL event types
+        if (eventType && msg.data) {
+          const realtimeEvent: RealtimeEvent = {
+            eventType,
+            inboxId,
+            timestamp: msg.timestamp ?? new Date().toISOString(),
+            data: msg.data,
+          };
+          this._genericHandlers.forEach((h) => h(realtimeEvent));
+        }
+
+        // Fire email-specific handlers for email.received (backward compat)
+        if (eventType === 'email.received' && msg.data) {
           const email = new Email(msg.data as EmailData, this._http);
-          const inboxId = msg.inbox_id;
 
           // Fire inbox-specific handlers
           const handlers = this._subscriptions.get(inboxId);
@@ -221,10 +272,11 @@ export class RealtimeConnection {
             handlers.forEach((h) => h(email));
           }
 
-          // Fire global handlers
+          // Fire global email handlers
           this._globalHandlers.forEach((h) => h(email));
         }
         break;
+      }
 
       case 'pong':
         // Server responded to our ping — connection is alive

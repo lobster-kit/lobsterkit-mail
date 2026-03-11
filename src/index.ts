@@ -49,9 +49,14 @@ export type { VariationInput } from './naming.js';
 export { RealtimeConnection } from './realtime.js';
 export type {
   RealtimeOptions,
+  RealtimeEvent,
   EmailEventHandler,
+  GenericEventHandler,
   ErrorHandler,
   ConnectionHandler,
 } from './realtime.js';
 
-export const VERSION = '1.5.0';
+export { WEBHOOK_EVENTS } from './events.js';
+export type { WebhookEvent } from './events.js';
+
+export const VERSION = '1.6.0';
