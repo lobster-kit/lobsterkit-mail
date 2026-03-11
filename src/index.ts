@@ -23,7 +23,10 @@ export { LobsterMail } from './client.js';
 export type { LobsterMailConfig, AccountInfo, SmartInboxOptions, SearchOptions, SearchResult } from './client.js';
 
 export { Inbox } from './inbox.js';
-export type { InboxData, ReceiveOptions, WaitForEmailOptions, SendOptions } from './inbox.js';
+export type { InboxData, ReceiveOptions, ReceiveResult, WaitForEmailOptions, SendOptions } from './inbox.js';
+
+export { Domain } from './domain.js';
+export type { DomainData, DomainStatus, DnsRecord, DnsRecordType } from './domain.js';
 
 export { Email } from './email.js';
 export type { EmailData, EmailSecurity, AttachmentData } from './email.js';
@@ -51,4 +54,4 @@ export type {
   ConnectionHandler,
 } from './realtime.js';
 
-export const VERSION = '0.0.1';
+export const VERSION = '1.5.0';
