@@ -290,7 +290,7 @@ export class Email {
    * @param opts - Options
    * @param opts.timeout - Max wait time in ms (default: 60000)
    * @param opts.pollInterval - Polling interval in ms (default: 2000)
-   * @returns Completed extraction result, or null if timed out or failed
+   * @returns Completed or failed extraction result, or null if timed out
    */
   async waitForExtraction(opts?: {
     timeout?: number;
@@ -300,15 +300,18 @@ export class Email {
     const pollInterval = opts?.pollInterval ?? 2_000;
     const startTime = Date.now();
 
-    // Trigger extraction (idempotent)
-    await this.extract();
+    // Trigger extraction (idempotent) and use initial result
+    let result: ExtractionResult | null = await this.extract();
+    if (result.status === 'completed' || result.status === 'failed') {
+      return result;
+    }
 
     while (Date.now() - startTime < timeout) {
-      const result = await this.getExtraction();
+      await new Promise((resolve) => setTimeout(resolve, pollInterval));
+      result = await this.getExtraction();
       if (result && (result.status === 'completed' || result.status === 'failed')) {
         return result;
       }
-      await new Promise((resolve) => setTimeout(resolve, pollInterval));
     }
 
     return null;
