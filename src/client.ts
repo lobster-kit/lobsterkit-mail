@@ -312,7 +312,7 @@ export class LobsterMail {
   }
 
   /**
-   * Register a webhook to receive real-time email notifications.
+   * Register a webhook to receive real-time event notifications.
    *
    * @param opts - Webhook configuration
    * @param opts.url - HTTPS endpoint URL to receive webhook payloads
@@ -322,7 +322,12 @@ export class LobsterMail {
    *
    * @example
    * ```typescript
-   * const wh = await lm.createWebhook({ url: 'https://example.com/hook' });
+   * import { WEBHOOK_EVENTS } from '@lobsterkit/lobstermail';
+   *
+   * const wh = await lm.createWebhook({
+   *   url: 'https://example.com/hook',
+   *   events: [WEBHOOK_EVENTS.EMAIL_RECEIVED, WEBHOOK_EVENTS.EMAIL_SENT],
+   * });
    * console.log(wh.secret); // Store this for signature verification
    * ```
    */
@@ -455,28 +460,6 @@ export class LobsterMail {
   // ---------------------------------------------------------------------------
 
   /**
-   * Open a WebSocket connection for real-time email notifications.
-   *
-   * Returns a {@link RealtimeConnection} that you can subscribe to
-   * inbox events on. If a connection is already open and authenticated,
-   * the existing one is returned.
-   *
-   * @param options - Reconnection and heartbeat options
-   * @returns A connected RealtimeConnection instance
-   *
-   * @example
-   * ```typescript
-   * const lm = await LobsterMail.create();
-   * const rt = await lm.connect();
-   * const inbox = await lm.createInbox();
-   *
-   * rt.subscribe(inbox.id, (email) => {
-   *   console.log('New email:', email.subject);
-   *   console.log(email.safeBodyForLLM());
-   * });
-   * ```
-   */
-  /**
    * Search emails across all inboxes (or scoped to one inbox).
    *
    * Uses PostgreSQL full-text search on subject, sender, and body preview.
@@ -517,6 +500,28 @@ export class LobsterMail {
     };
   }
 
+  /**
+   * Open a WebSocket connection for real-time email notifications.
+   *
+   * Returns a {@link RealtimeConnection} that you can subscribe to
+   * inbox events on. If a connection is already open and authenticated,
+   * the existing one is returned.
+   *
+   * @param options - Reconnection and heartbeat options
+   * @returns A connected RealtimeConnection instance
+   *
+   * @example
+   * ```typescript
+   * const lm = await LobsterMail.create();
+   * const rt = await lm.connect();
+   * const inbox = await lm.createInbox();
+   *
+   * rt.subscribe(inbox.id, (email) => {
+   *   console.log('New email:', email.subject);
+   *   console.log(email.safeBodyForLLM());
+   * });
+   * ```
+   */
   async connect(options?: RealtimeOptions): Promise<RealtimeConnection> {
     if (this._realtime?.connected) return this._realtime;
 
