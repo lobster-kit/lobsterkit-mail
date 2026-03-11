@@ -51,11 +51,35 @@ export interface SendOptions {
   body: { text: string; html?: string };
   /** Reply-to address. Useful when the inbox is temporary but responses should route elsewhere. */
   replyTo?: string;
+  /** Message-ID of the email being replied to (enables threading). */
+  inReplyTo?: string;
+  /** Explicit thread ID to associate with this email. */
+  threadId?: string;
   /** Attachments to include. Each `content` must be base64-encoded. Max 10 attachments. */
   attachments?: Array<{
     filename: string;
     contentType: string;
     content: string; // base64-encoded
+  }>;
+}
+
+export interface ThreadSummary {
+  id: string;
+  inboxId: string;
+  subject: string;
+  emailCount: number;
+  lastEmailAt: string;
+  createdAt: string;
+}
+
+export interface ThreadDetail extends ThreadSummary {
+  emails: Array<{
+    id: string;
+    from: string;
+    subject: string;
+    preview: string | null;
+    createdAt: string;
+    isInjectionRisk?: boolean;
   }>;
 }
 
@@ -332,8 +356,37 @@ export class Inbox {
       subject: opts.subject,
       body: opts.body,
       replyTo: opts.replyTo,
+      inReplyTo: opts.inReplyTo,
+      threadId: opts.threadId,
       attachments: opts.attachments,
     });
+  }
+
+  /**
+   * List conversation threads in this inbox.
+   *
+   * @param opts - Pagination options
+   * @returns Object with `data` (threads), `hasMore`, and `cursor`
+   */
+  async listThreads(opts?: {
+    limit?: number;
+    cursor?: string;
+  }): Promise<{ data: ThreadSummary[]; hasMore: boolean; cursor: string | null }> {
+    const params = new URLSearchParams();
+    if (opts?.limit) params.set('limit', opts.limit.toString());
+    if (opts?.cursor) params.set('cursor', opts.cursor);
+    const qs = params.toString();
+    return this._http.get(`/v1/inboxes/${this.id}/threads${qs ? `?${qs}` : ''}`);
+  }
+
+  /**
+   * Get a thread with all emails in chronological order.
+   *
+   * @param threadId - Thread ID (e.g. `thd_...`)
+   * @returns Thread detail with emails array
+   */
+  async getThread(threadId: string): Promise<ThreadDetail> {
+    return this._http.get(`/v1/inboxes/${this.id}/threads/${threadId}`);
   }
 }
 

@@ -16,6 +16,7 @@ function makeEmailData(overrides?: Partial<EmailData>): EmailData {
     body: 'Your code is 847291. Enter it on the signup page.',
     isRead: false,
     hasAttachments: false,
+    threadId: null,
     security: {
       injectionRiskScore: 0,
       flags: [],
