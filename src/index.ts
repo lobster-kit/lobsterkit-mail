@@ -23,7 +23,7 @@ export { LobsterMail } from './client.js';
 export type { LobsterMailConfig, AccountInfo, SmartInboxOptions } from './client.js';
 
 export { Inbox } from './inbox.js';
-export type { InboxData, ReceiveOptions, ReceiveResult, WaitForEmailOptions, SendOptions } from './inbox.js';
+export type { InboxData, ReceiveOptions, ReceiveResult, WaitForEmailOptions, SendOptions, ThreadSummary, ThreadDetail } from './inbox.js';
 
 export { Domain } from './domain.js';
 export type { DomainData, DomainStatus, DnsRecord, DnsRecordType } from './domain.js';

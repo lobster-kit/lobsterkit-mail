@@ -29,6 +29,7 @@ export interface EmailData {
   body: string | null;
   isRead: boolean;
   hasAttachments: boolean;
+  threadId: string | null;
   attachments?: AttachmentData[];
   security: EmailSecurity;
   status: string | null;
@@ -64,6 +65,8 @@ export class Email {
   /** Whether this email has been read. */
   readonly isRead: boolean;
   readonly hasAttachments: boolean;
+  /** Thread ID this email belongs to, if threaded. */
+  readonly threadId: string | null;
   /** Attachment metadata. Each entry has filename, contentType, sizeBytes, and s3Key. */
   readonly attachments: AttachmentData[];
   readonly security: EmailSecurity;
@@ -86,6 +89,7 @@ export class Email {
     this._body = data.body;
     this.isRead = data.isRead;
     this.hasAttachments = data.hasAttachments;
+    this.threadId = data.threadId ?? null;
     this.attachments = data.attachments ?? [];
     this.security = data.security;
     this.status = data.status;
