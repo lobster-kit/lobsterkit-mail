@@ -115,6 +115,10 @@ const inbox = await lm.createInbox({
 | `lm.verifyDomain(id)` | Trigger DNS re-verification |
 | `lm.deleteDomain(id)` | Delete a custom domain |
 
+## LobsterKit Ecosystem
+
+`@lobsterkit/lobstermail` is part of the LobsterKit ecosystem alongside [@lobsterkit/vault](https://www.npmjs.com/package/@lobsterkit/vault) and [@lobsterkit/db](https://www.npmjs.com/package/@lobsterkit/db). Link accounts across products at signup with a `linkToken` to get a single Stripe customer and an automatic 15% multi-product discount.
+
 ## Links
 
 - Website: https://lobstermail.ai
