@@ -99,13 +99,8 @@ export const lobstermailPlugin = createChatChannelPlugin({
           persistToken: false,
         });
 
-        const inboxes = await lm.listInboxes();
-        const inbox = inboxes.find((i) => i.id === cfg.inboxId);
-        if (!inbox) {
-          throw new Error(
-            `lobstermail: inbox ${cfg.inboxId} not found on account`,
-          );
-        }
+        // Use getInbox(id) — single API call, not listInboxes()
+        const inbox = await lm.getInbox(cfg.inboxId);
 
         const result = await inbox.send({
           to: Array.isArray(to) ? to : [to],

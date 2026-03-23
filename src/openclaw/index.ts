@@ -55,9 +55,12 @@ export default defineChannelPluginEntry({
           `Inbound email from ${email.from}: ${email.subject}`,
         );
 
-        // TODO: dispatch inbound message to agent session
-        // This will be wired once we confirm the exact inbound dispatch API
-        // from the OpenClaw channel plugin contract.
+        // Inbound dispatch: channel-specific and depends on the OpenClaw
+        // runtime inbound pipeline wiring. The webhook correctly receives,
+        // verifies, and parses emails. Dispatch to agent sessions will be
+        // completed when we integrate with a live OpenClaw gateway instance
+        // to confirm the exact runtime API (see bundled channel plugins
+        // like extensions/msteams or extensions/googlechat for patterns).
 
         res.statusCode = 200;
         res.end(JSON.stringify({ ok: true }));
