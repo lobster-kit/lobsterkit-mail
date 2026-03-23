@@ -24,7 +24,9 @@
     "openclaw.plugin.json"
   ],
   "openclaw": {
-    "extensions": ["./dist/openclaw/index.js"],
+    "extensions": [
+      "./dist/openclaw/index.js"
+    ],
     "setupEntry": "./dist/openclaw/setup-entry.js",
     "channel": {
       "id": "lobstermail",
@@ -65,7 +67,7 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts src/openclaw/index.ts src/openclaw/setup-entry.ts --format esm --dts",
+    "build": "tsup src/index.ts --format esm --dts && tsup src/openclaw/index.ts src/openclaw/setup-entry.ts --format esm --external openclaw --no-dts --outDir dist/openclaw",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "docs": "typedoc",
@@ -73,6 +75,7 @@
   },
   "devDependencies": {
     "@types/ws": "^8.18.1",
+    "@types/yauzl": "^2.10.3",
     "tsup": "^8.3.6",
     "typedoc": "^0.28.17",
     "typedoc-plugin-markdown": "^4.10.0",
