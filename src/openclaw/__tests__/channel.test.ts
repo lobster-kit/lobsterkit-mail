@@ -1,4 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { createHmac } from "node:crypto";
+
+// Mock openclaw SDK imports before importing our modules
+vi.mock("openclaw/plugin-sdk/core", () => ({
+  createChatChannelPlugin: vi.fn((opts: any) => opts),
+  createChannelPluginBase: vi.fn((opts: any) => opts),
+  defineChannelPluginEntry: vi.fn((opts: any) => opts),
+  defineSetupPluginEntry: vi.fn((plugin: any) => ({ plugin })),
+}));
+
+vi.mock("openclaw/plugin-sdk/runtime-store", () => ({
+  createPluginRuntimeStore: vi.fn(() => ({
+    setRuntime: vi.fn(),
+    getRuntime: vi.fn(),
+    tryGetRuntime: vi.fn(),
+  })),
+}));
+
 import { getChannelConfig } from "../channel.js";
 import {
   parseInboundEmail,
@@ -6,7 +24,6 @@ import {
   verifyWebhookSignature,
 } from "../webhook.js";
 import type { InboundEmailPayload } from "../webhook.js";
-import { createHmac } from "node:crypto";
 
 // ---------------------------------------------------------------------------
 // Fixtures
