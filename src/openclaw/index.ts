@@ -45,9 +45,16 @@ export default defineChannelPluginEntry({
         }
 
         // Parse and dispatch
-        const payload = (
-          typeof req.body === "string" ? JSON.parse(req.body) : req.body
-        ) as InboundEmailPayload;
+        let payload: InboundEmailPayload;
+        try {
+          payload = (
+            typeof req.body === "string" ? JSON.parse(req.body) : req.body
+          ) as InboundEmailPayload;
+        } catch {
+          res.statusCode = 400;
+          res.end(JSON.stringify({ error: "Malformed JSON body" }));
+          return true;
+        }
         const email = parseInboundEmail(payload);
         const safeContent = formatEmailForLLM(email);
 

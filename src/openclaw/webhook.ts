@@ -50,7 +50,7 @@ export function parseInboundEmail(
     id: email.id,
     from: email.from,
     to: email.to,
-    subject: email.subject,
+    subject: email.subject ?? "(no subject)",
     textBody: email.body?.text ?? "",
     receivedAt: email.receivedAt,
     injectionRiskScore: email.security?.injectionRiskScore ?? 0,
