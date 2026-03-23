@@ -69,4 +69,4 @@ export type {
 export { WEBHOOK_EVENTS } from './events.js';
 export type { WebhookEvent } from './events.js';
 
-export const VERSION = '1.6.0';
+export const VERSION = '1.7.0';

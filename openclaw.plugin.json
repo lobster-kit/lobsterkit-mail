@@ -1,0 +1,54 @@
+{
+  "id": "lobstermail",
+  "name": "LobsterMail",
+  "description": "Email for AI agents via lobstermail.ai — first-class messaging surface for OpenClaw",
+  "version": "1.0.0",
+  "kind": "channel",
+  "channels": ["lobstermail"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "token": {
+        "type": "string",
+        "description": "LobsterMail API token (from POST /v1/signup or dashboard)"
+      },
+      "inboxId": {
+        "type": "string",
+        "description": "Default inbox ID to send from"
+      },
+      "inboxAddress": {
+        "type": "string",
+        "description": "Default inbox email address (e.g. agent@lobstermail.ai)"
+      },
+      "allowFrom": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Email addresses allowed to message the agent (* = anyone)"
+      },
+      "webhookSecret": {
+        "type": "string",
+        "description": "HMAC-SHA256 secret for webhook signature verification"
+      },
+      "dmSecurity": {
+        "type": "string",
+        "description": "DM security policy (allowlist | open)"
+      }
+    }
+  },
+  "uiHints": {
+    "token": {
+      "label": "API Token",
+      "placeholder": "lm_sk_test_...",
+      "sensitive": true
+    },
+    "inboxAddress": {
+      "label": "Inbox Address",
+      "placeholder": "agent@lobstermail.ai"
+    },
+    "webhookSecret": {
+      "label": "Webhook Secret",
+      "sensitive": true
+    }
+  }
+}
