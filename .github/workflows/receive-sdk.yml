@@ -1,0 +1,59 @@
+name: Receive SDK
+
+on:
+  repository_dispatch:
+    types: [sdk-update]
+
+jobs:
+  update:
+    name: Sync SDK from monorepo
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout monorepo SDK
+        uses: actions/checkout@v4
+        with:
+          repository: lobster-kit/lobstermail
+          path: _monorepo
+          sparse-checkout: packages/sdk
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync source files
+        run: |
+          # Copy SDK source from monorepo to standalone
+          rsync -av --delete \
+            --exclude='package.json' \
+            --exclude='node_modules' \
+            --exclude='.git' \
+            _monorepo/packages/sdk/src/ src/
+          rm -rf _monorepo
+
+      - name: Sync version from payload
+        run: |
+          VERSION="${{ github.event.client_payload.version }}"
+          if [ -n "$VERSION" ]; then
+            npm version "$VERSION" --no-git-tag-version --allow-same-version 2>/dev/null || true
+          fi
+
+      - name: Commit and tag if changed
+        run: |
+          git config user.name "lobsterkit-bot"
+          git config user.email "bot@lobsterkit.dev"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          VERSION="${{ github.event.client_payload.version }}"
+          git commit -m "[auto] sync SDK from ${{ github.event.client_payload.source }} (${{ github.event.client_payload.sha }})"
+          git push
+
+          # Tag to trigger publish.yml if version was bumped
+          if [ -n "$VERSION" ] && ! git tag -l "v$VERSION" | grep -q .; then
+            git tag "v$VERSION"
+            git push origin "v$VERSION"
+          fi
