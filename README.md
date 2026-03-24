@@ -115,6 +115,47 @@ const inbox = await lm.createInbox({
 | `lm.verifyDomain(id)` | Trigger DNS re-verification |
 | `lm.deleteDomain(id)` | Delete a custom domain |
 
+## OpenClaw Channel Plugin
+
+LobsterMail works as a native [OpenClaw](https://openclaw.ai) channel plugin — giving your agent a real email address as a first-class messaging surface alongside Telegram, Discord, etc.
+
+### Install
+
+```bash
+openclaw plugins install lobstermail
+```
+
+### Configure
+
+Add to your OpenClaw config (`~/.openclaw/config.yaml`):
+
+```yaml
+channels:
+  lobstermail:
+    token: "lm_sk_..."           # LobsterMail API token
+    inboxId: "ibx__..."          # Inbox ID to send/receive from
+    inboxAddress: "agent@lobstermail.ai"
+    webhookSecret: "whsec_..."   # HMAC-SHA256 secret (optional but recommended)
+    allowFrom: ["*"]             # Who can email the agent (* = anyone)
+```
+
+### How it works
+
+- **Outbound:** Your agent sends email via the standard `message` tool — same interface as Telegram/Discord
+- **Inbound:** Emails arrive via webhook, verified with HMAC signatures, sanitized for prompt injection, then delivered to the agent as messages
+- **Security:** Boundary markers stripped, injection risk scored, SPF/DKIM/DMARC metadata attached
+
+### Getting a token
+
+```typescript
+import { LobsterMail } from 'lobstermail';
+const lm = await LobsterMail.create();          // auto-signup, no API key needed
+const inbox = await lm.createSmartInbox();       // get an address
+console.log(inbox.address);                      // → "your-agent@lobstermail.ai"
+```
+
+Use the token from `~/.lobstermail/config.json` and the inbox ID from the response.
+
 ## LobsterKit Ecosystem
 
 `lobstermail` is part of the LobsterKit ecosystem alongside [@lobsterkit/vault](https://www.npmjs.com/package/@lobsterkit/vault) and [@lobsterkit/db](https://www.npmjs.com/package/@lobsterkit/db). Link accounts across products at signup with a `linkToken` to get a single Stripe customer and an automatic 15% multi-product discount.
