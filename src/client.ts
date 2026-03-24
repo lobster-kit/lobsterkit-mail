@@ -322,7 +322,7 @@ export class LobsterMail {
    *
    * @example
    * ```typescript
-   * import { WEBHOOK_EVENTS } from '@lobsterkit/lobstermail';
+   * import { WEBHOOK_EVENTS } from 'lobstermail';
    *
    * const wh = await lm.createWebhook({
    *   url: 'https://example.com/hook',

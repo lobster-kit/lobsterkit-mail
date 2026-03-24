@@ -1,8 +1,8 @@
 /**
- * End-to-end simulation: "npm install @lobsterkit/lobstermail → it just works"
+ * End-to-end simulation: "npm install lobstermail → it just works"
  *
  * This script simulates exactly what an AI agent would do after
- * `npm install @lobsterkit/lobstermail`. Run against a live local API.
+ * `npm install lobstermail`. Run against a live local API.
  *
  * Usage: npx tsx packages/sdk/src/__tests__/e2e-simulation.ts
  */
@@ -197,7 +197,7 @@ async function main() {
   console.log('✅ ALL STEPS PASSED');
   console.log('============================');
   console.log(`\nTotal inboxes created: ${(await lm.listInboxes()).length}`);
-  console.log('The "npm install @lobsterkit/lobstermail" flow works end-to-end.');
+  console.log('The "npm install lobstermail" flow works end-to-end.');
 }
 
 main().catch((err) => {

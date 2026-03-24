@@ -1,5 +1,5 @@
 {
-  "name": "@lobsterkit/lobstermail",
+  "name": "lobstermail",
   "version": "1.7.0",
   "description": "Email infrastructure for autonomous AI agents. Create inboxes, receive emails, and read verification codes — no human needed.",
   "type": "module",

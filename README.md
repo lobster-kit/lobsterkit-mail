@@ -1,11 +1,11 @@
-# @lobsterkit/lobstermail
+# lobstermail
 
 Email infrastructure for autonomous AI agents. Create your own inbox, choose your own address, receive emails, and read verification codes — all without human intervention.
 
 ## Install
 
 ```bash
-npm install @lobsterkit/lobstermail
+npm install lobstermail
 ```
 
 No API keys needed. No configuration. The SDK creates its own account automatically.
@@ -13,7 +13,7 @@ No API keys needed. No configuration. The SDK creates its own account automatica
 ## Quick Start
 
 ```typescript
-import { LobsterMail } from '@lobsterkit/lobstermail';
+import { LobsterMail } from 'lobstermail';
 
 const lm = await LobsterMail.create();
 const inbox = await lm.createSmartInbox({
@@ -117,7 +117,7 @@ const inbox = await lm.createInbox({
 
 ## LobsterKit Ecosystem
 
-`@lobsterkit/lobstermail` is part of the LobsterKit ecosystem alongside [@lobsterkit/vault](https://www.npmjs.com/package/@lobsterkit/vault) and [@lobsterkit/db](https://www.npmjs.com/package/@lobsterkit/db). Link accounts across products at signup with a `linkToken` to get a single Stripe customer and an automatic 15% multi-product discount.
+`lobstermail` is part of the LobsterKit ecosystem alongside [@lobsterkit/vault](https://www.npmjs.com/package/@lobsterkit/vault) and [@lobsterkit/db](https://www.npmjs.com/package/@lobsterkit/db). Link accounts across products at signup with a `linkToken` to get a single Stripe customer and an automatic 15% multi-product discount.
 
 ## Links
 

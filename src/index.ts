@@ -5,7 +5,7 @@
  *
  * @example
  * ```typescript
- * import { LobsterMail } from '@lobsterkit/lobstermail';
+ * import { LobsterMail } from 'lobstermail';
  *
  * const lm = await LobsterMail.create();
  * const inbox = await lm.createInbox();
